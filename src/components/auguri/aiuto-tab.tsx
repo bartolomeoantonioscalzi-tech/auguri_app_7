@@ -17,6 +17,10 @@ const FAQ: Item[] = [
     a: "No. L'app prepara il testo e apre Telegram/WhatsApp/Messaggi, ma sei sempre tu a premere il tasto di invio nell'app di destinazione. Nessun augurio parte senza il tuo tocco.",
   },
   {
+    q: "Posso modificare il testo degli auguri?",
+    a: "No, ed è una scelta precisa (anti-spam): il testo è chiuso. L'unica parte personale è la firma (Impostazioni); a ogni invio l'app sceglie da sola un modello diverso tra quelli previsti, così messaggi vicini nel tempo non sono identici e non vengono scambiati per spam.",
+  },
+  {
     q: "Se sbaglio, posso ripartire da capo?",
     a: "Sì. Ogni card ha il pulsante ↺ Ripristina — non inviato (con una piccola conferma) che riporta il contatto a DA INVIARE con tutti e tre i canali attivi. In Impostazioni c'è anche il ripristino di tutti gli invii.",
   },
@@ -35,7 +39,7 @@ const FAQ: Item[] = [
 ];
 
 const STEPS_IOS = [
-  "Apri l'indirizzo dell'app con Safari (es. https://auguri-xxx.vercel.app)",
+  "Apri l'indirizzo dell'app con Safari (es. https://auguri.netlify.app)",
   "Tocca il pulsante Condividi (il quadrato con la freccia in su)",
   "Scorri e scegli \u201cAggiungi alla schermata Home\u201d",
   "Tocca \u201cAggiungi\u201d: l'icona appare in Home, come una vera app",
@@ -65,7 +69,7 @@ export function AiutoTab() {
         <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Come funziona un invio</h2>
         <ol className="mt-2 space-y-2.5 text-[14px] leading-relaxed text-[#5C4F3A]">
           <li>
-            <b>1.</b> Sulla card del compleannato tocchi un canale (Telegram, WhatsApp o SMS) e
+            <b>1.</b> Sulla card del festeggiato tocchi un canale (Telegram, WhatsApp o SMS) e
             confermi con &ldquo;Sì&rdquo;: l&rsquo;app scelta si apre con il messaggio già scritto.
             Il testo resta anche negli appunti come copia di sicurezza.
           </li>
@@ -100,7 +104,7 @@ export function AiutoTab() {
         </p>
 
         <h3 className="mt-3 font-serif text-[15px] font-bold text-[#5C4F3A]">
-           iPhone / iPad (Safari)
+          iPhone / iPad (Safari)
         </h3>
         <ol className="mt-1 space-y-1.5 text-[14px] leading-relaxed text-[#5C4F3A]">
           {STEPS_IOS.map((s, i) => (
@@ -120,7 +124,7 @@ export function AiutoTab() {
         </ol>
       </section>
 
-      {/* Deploy / Vercel spiegato semplice */}
+      {/* Deploy / Netlify spiegato semplice */}
       <section className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4">
         <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">
           Cosa vuol dire &ldquo;metterla online&rdquo; (deploy)?
@@ -133,11 +137,12 @@ export function AiutoTab() {
             passaggio si chiama <b>deploy</b> (pubblicazione).
           </p>
           <p>
-            <b>Vercel</b> è il servizio che fa questo nel modo più semplice: è gratuito per
-            l&rsquo;uso che ne farai, ed è fatto dalle stesse persone che hanno creato la
-            tecnologia dell&rsquo;app (Next.js). Una volta pubblicata, l&rsquo;app ottiene un
-            indirizzo tipo <code className="rounded bg-[#F4EEDF] px-1">https://auguri.vercel.app</code>{" "}
-            che funziona da qualsiasi telefono.
+            <b>Netlify</b> è il servizio consigliato: è gratuito per l&rsquo;uso normale di
+            un&rsquo;app come questa ed è collegato al repository GitHub dove sta il codice. A ogni
+            aggiornamento del codice, Netlify ricostruisce e aggiorna l&rsquo;app da solo. Una volta
+            pubblicata, l&rsquo;app ottiene un indirizzo tipo{" "}
+            <code className="rounded bg-[#F4EEDF] px-1">https://auguri.netlify.app</code> che
+            funziona da qualsiasi telefono.
           </p>
           <p>
             Attenzione: pubblicare l&rsquo;app <b>non</b> pubblica i tuoi contatti. I contatti

@@ -1,2 +1,177 @@
 # auguri_app_7
 An app to send Happy Birthday and Happy Name Day wishes
+==========================================================
+AUGURI — Guida dell'app
+==========================================================
+
+COS'È QUESTA APP AUGURI E REQUISITI MINIMI
+
+RICORDA: QUESTA APP è MOLTO POTENTE, PERMETTE DI INVIARE RAPIDAMENTE MOLTI MESSAGGI DI AUGURI, OGNI ALTRO UTILIZZO NON È CONSENTITO. 
+==> ECCO PERCHÉ I MESSAGGI DI AUGURI SONO BLOCCATI (TRANNE LA VOSTRA FIRMA);
+==> SE I MESSAGGI SONO UGUALI NELLA STRUTTURA, C'È RISCHIO CHE SIANO CONFUSI CON LO SPAM, ECCO IL MOTIVO DEI MESSAGGI DIFFERENZIATI A ROTAZIONE; 
+==> IN OGNI CASO: NON SIAMO RESPONSABILI DEL BLOCCO DA PARTE DELLE MESSAGGISTICHE PER SOSPETTO SPAM <==
+-----------------
+"Auguri" è un'applicazione nata grazie al Vibe Coding e l'utilizzo progressivo di diverse piattaforme AI per raggiungere lo scopo. tiene d'occhio i compleanni dei tuoi contatti e ti aiuta a spedire gli auguri con Telegram, WhatsApp o SMS in un tocco: il messaggio viene preparato per te con Nome Cognome e qualifica, tu controlli e premi invio.
+Non richiede registrazione, non ha pubblicità e i tuoi contatti NON vengono copiati o incollati da nessuna parte: restano solo nel tuo telefono. 
+
+I requisiti minimi sono: 
+Per iPhone / iPad: 
+- utilizzare un iPhone; 
+- con sistema operativo iOS 26.0; 
+- utilizzare (per il momento) come browser, solo Safari.
+Per Android: 
+- utilizzare uno smartphone Android; 
+- utilizzare come browser Chrome, aggiornato.
+
+
+COME SI USA L'APP (Le 4 schede che vedi in basso: OGGI, IMPORTA, IMPOSTAZIONI, AIUTO)
+-------------------------------------
+OGGI: qui trovi l'elenco di coloro i quali compiono gli anni, oppure, festeggiano il loro onomastico (se hanno nomi doppi o composti, saranno festeggiati più volte durante l'anno) con la card degli auguri pronta e i tre pulsanti di invio.
+
+IMPORTA Qui potrai importare sia i file della rubrica sia l'elenco aggiornato dei Nomi Propri di Persona e dei relativi onomastici. Potrai importare il file più aggiornato della rubrica e personalizzare l'elenco dei Nomi Propri di Persona con relativo onomastico, grazie alle nostre ricerche sono davvero pochi gli onomastici relegati al 1° novembre, Ognissanti. 
+Come aggiungere i contatti: incolla una lista di testo (nome e numero, uno per riga), carica un file .txt o .vcf dalla rubrica, oppure aggiungili a mano. 
+NOI SUGGERIAMO DI IMPORTARE UNA VERSIONE LEGGERA DELLA RUBRICA. 
+Come? 
+
+Per iPhone / iPad: 
+Rubrica: Per esportare la rubrica in formato .vcf in maniera ottimale, fai così: 
+nell'app Contatti vai su "Contatti", esci dall'account impostato come preferito, di solito è quello su iCloud, e tieni premuto per qualche secondo il dito sull'account predefinito, comparirà un pop up: "Esporta", vedrai comparire una schermata che elenca tutte le voci presenti in Rubrica (Nome, Cognome, cellulare e molte altre voci), clicca su "Deseleziona tutte" e poi clicca solo su: 
+- Nome; 
+- Cognome; 
+- Cellulare; 
+- Compleanno
+Clicca sul segno di spunta blu in alto a destra, comparirà una finestra di salvataggio in iCloud, di default è la cartella "Download", se vorrai potrai personalizzare il titolo del file .vcf, meglio salvarlo con una data, in modo da riconoscerlo come il più aggiornato tra i vari che salverai. A questo punto, dovrai andare su "IMPORTA" e seguire la procedura intuitiva di upload del file aggiornato della rubrica. 
+
+Onomastici: il file che Vi abbiamo allegato è un file che contiene i Nomi Propri di Persona Italiani e relativa data di onomastico ed in formato .csv. Abbiamo fatto del nostro meglio per considerare tutti i nomi più utilizzati, compresi diminutivi, vezzeggiativi, alcune inflessioni dialettali oramai comuni ed infine alcuni nomi stranieri oramai di utilizzo frequenti in Italia. Ma se volete personalizzare l'elenco dei nomi o correggere le date di onomastico (le date di onomastico non sono rigide, nemmeno nella tradizione cristiana) dovrete operare modificando il file .csv tramite un editor di foglio elettronico, avendo cura di salvare sempre nello stesso formato. Ovviamente non ci rendiamo responsabili per le Vostre modifiche e nemmeno per l'efficienza del nostro programma DOPO le modifiche apportate. 
+La procedura di upload sarà la stessa ma nell'apposita finestra di dialogo. 
+La doppia procedura di upload salvaguarda dallo scambio erroneo dei file. 
+
+Per Android: 
+Rubrica: l'app "Contatti" di serie cambia nome e menu a seconda della marca del telefono, ma il percorso è sempre simile: 
+1. apri l'app "Contatti"; 
+2. apri il menu: sono i tre puntini verticali in alto a destra, oppure le tre linee orizzontali in alto a sinistra, oppure la tua iniziale/avatar in alto a destra; 
+3. cerca la voce "Gestisci contatti" / "Organizza contatti" / "Importa o esporta"; 
+4. tocca "Esporta su file .vcf" (su alcuni telefoni: "Esporta" → "Memoria telefono"); 
+5. salva il file nella cartella "Download"; meglio personalizzare il titolo con una data, così riconosci subito il più aggiornato (es. "rubrica-2025-06-01.vcf"). 
+Alcune differenze note: 
+- Samsung: Contatti → Menu (☰) → "Gestisci contatti" → "Importa o esporta contatti" → "Esporta" → Memoria telefono; 
+- Xiaomi / Redmi / POCO: Contatti → Impostazioni (o menu) → "Importa/esporta" → "Esporta su archiviazione (.vcf)"; 
+- in alternativa, su qualunque telefono: apri Chrome su contacts.google.com → accedi col tuo account Google → seleziona i contatti → "Esporta" → formato "vCard (.vcf)". 
+NOTA sul file "leggero": su Android l'esportazione comprende di norma tutti i campi della rubrica (email, indirizzi, note...): il file sarà più grande di quello consigliato per iPhone, ma non è un problema, perché l'app legge soltanto i campi che le servono (Nome, Cognome, Cellulare, Compleanno) e ignora il resto. Non serve — e sconsigliamo — di installare app di terze parti per "snellire" la rubrica. 
+Onomastici: il file .csv dei Nomi Propri di Persona si modifica anche da telefono: 
+1. salva il file .csv nella cartella "Download" (o aprilo direttamente dall'email/messaggio con cui l'hai ricevuto); 
+2. aprilo con un foglio elettronico: su Android il più comodo è Google Fogli (gratuito); 
+3. modifica nomi e date con cura, senza toccare la riga di intestazione e senza cambiare l'ordine delle colonne; 
+4. salva di nuovo in .csv mantenendo lo stesso formato dell'originale (con Google Fogli: menu ⋮ → "Condividi ed esporta" → "Salva con nome" → formato CSV; da computer: File → Scarica → "Valori separati da virgola (.csv)"); 
+5. salva il nuovo file in "Download". 
+Ricorda quanto già detto per iPhone: le modifiche sono sotto la Tua responsabilità, e non rispondiamo dell'efficienza del programma DOPO le modifiche apportate. 
+Caricamento dei file (scheda IMPORTA): 
+1. apri l'app Auguri → scheda "IMPORTA"; 
+2. per la rubrica: tocca la finestra dedicata al file .txt / .vcf: si apre il selettore file di Android ("Documenti") → menu ☰ → "Download" → seleziona il tuo file; 
+3. per gli onomastici: tocca l'altra finestra dedicata al file .csv e ripeti la stessa operazione; 
+le due procedure sono separate apposta: così non potrete scambiare i file. 
+In alternativa alla rubrica: puoi incollare una lista di testo (nome e numero, uno per riga) oppure aggiungere i contatti a mano. 
+Se il selettore file non vede il tuo file: apri l'app "File" / "I miei file" e verifica che il file sia davvero in "Download"; nel selettore, usa il menu ☰ → "Download" oppure "Mostra memoria interna".
+
+
+IMPOSTAZIONI La tua firma, la scelta dei modelli di auguri (testi chiusi, vedi la sezione dedicata più sotto) e il ripristino di tutti gli invii.
+Vi ricordiamo che, al momento di avviare per la prima volta l'applicazione, avete accettato di inviare auguri con la Vostra firma e che accettate anche di non inviare messaggi ripetuti alle stesse persone (reato di stalking) e di utilizzare un linguaggio consono e decoroso. 
+Inoltre l'ordine nel quale sono elencate le messaggerie: 
+1. Telegram;
+2. WhatsApp; 
+3. SMS. 
+Non è casuale ma è voluto, utilizzate le messaggerie in quest'ordine per ridurre il rischio di blocchi sulle prime due. 
+
+
+IL TESTO DEGLI AUGURI È CHIUSO (ANTI-SPAM)
+-------------------------------------
+Il testo degli auguri è bloccato: l'unica parte personale è la Vostra firma (Impostazioni). Non è una mancanza, è una scelta precisa di progetto.
+
+Cosa contiene davvero un messaggio: 
+- il testo di un modello già pronto, scelto a rotazione fra quelli previsti (compleanno e onomastico): messaggi vicini nel tempo non sono identici fra loro, proprio per non sembrare spam; 
+- il Nome e il Cognome (e la qualifica, se presente in rubrica): inseriti automaticamente dall'app, non sono modificabili; 
+- la Vostra firma: unica parte editabile, ripulita automaticamente da link, numeri di telefono, simboli e testo anomalo (solo lettere, spazi e punteggiatura ordinaria).
+
+Cosa NON è possibile fare: 
+- non si può scrivere testo libero nei messaggi: nessun link, nessuna immagine, nessun numero, nessuna offerta o riferimento commerciale; 
+- non esiste l'invio automatico né "a tutti in un colpo": ogni augurio parte da un tocco Vostro, con la conferma "Sì" sulla card e la conferma finale nella messaggeria; 
+- non esistono invii programmati o ripetuti: una volta confermato l'invio, la card si disattiva (e la potete riattivare solo voi, a mano, con "Ripristina — non inviato").
+
+Perché queste regole: 
+i messaggi identici, ripetuti in pochi minuti, sono il segnale con cui le messaggerie riconoscono lo spam. Un testo chiuso, differenziato a rotazione, firmato e inviato uno a uno mantiene gli auguri tali e quali: "quelli di una persona vera". Se il testo fosse libero, basterebbe incollare una pubblicità per trasformare l'app in uno strumento di spam pubblicitario, o peggio: e questo NON è consentito. Questa app è potentissima per una cosa sola: fare tanti auguri, rapidamente, a chi conoscete. 
+
+
+AIUTO È questa guida, sempre disponibile dentro l'app.
+
+
+COME FUNZIONA UN INVIO
+----------------------
+1. Sulla card tocchi un canale (nell'ordine, come già descritto: Telegram, poi WhatsApp e, infine, SMS) e confermi con "Sì": la messaggeria scelta si apre con il messaggio già scritto. Il testo resta anche negli appunti come copia di sicurezza.
+
+2. Se il contatto è su Telegram si apre direttamente la sua chat. Se non c'è, comparirà un pop up di avviso da parte di Telegram, con la finestra "Spiacenti, sembra che questo utente non esista": non è un errore dell'app, ti sta dicendo di provare un altro canale.
+
+3. Tornando nell'app ti fa la domanda: <<Telegram inviato a "Nome"?>> con tre risposte:
+ - "Sì, inviato": segna l'invio come CONFERMATO;
+ - "No, non inviato": libera il canale, puoi riprovare con WhatsApp;
+ - "Annulla": deciderai più tardi (la domanda torna al prossimo utilizzo dell'app).
+
+4. Come si comportano i pulsanti man mano che li utilizzi? 
+ - se il messaggio non è andato a buon fine nella messaggeria che hai appena utilizzato, quel canale diventa inattivo, mentre gli altri restano sempre attivi;
+ - se il messaggio è andato a buon fine nella messaggeria che hai appena utilizzato, allora tutta la card diventa inattiva. 
+A meno che non si utilizzi il pulsante "Ripristina — non inviato", presente su ogni card, per ricominciare da capo.
+
+
+INSTALLARE L'APP SUL TELEFONO
+-----------------------------
+Per prima cosa, l'app deve essere pubblicata su internet (vedi la sezione successiva), poi l'installazione dura mezzo minuto e non passa da nessun App Store: 
+
+Procedura per iPhone e iPad, utilizzando Safari.
+ 1. Apri l'indirizzo dell'app (la URL potrebbe avere un aspetto simile: https: // auguri. vercel. app oppure https ://auguri. Netlify. App/ )
+ 2. Si aprirà una "pagina" (in realtà è locale, non è un sito web pubblico), tocca il pulsante Condividi (quadrato con freccia in su)
+ 3. Scegli "Aggiungi alla schermata Home"
+ 4. Tocca "Aggiungi": l'icona appare in Home
+
+Procedura per Android (Chrome)
+ 1. Apri l'indirizzo dell'app
+ 2. Menu (tre puntini in alto a destra)
+ 3. "Aggiungi alla schermata Home" o "Installa app"
+ 4. Conferma: l'icona appare nel menu delle app
+
+
+COSA VUOL DIRE "METTERLA ONLINE" (DEPLOY, VERCEL)
+-------------------------------------------------
+L'app, com'è adesso, vive solo nel computer dove è stata costruita: il telefono non può raggiungerla.
+
+Il "deploy" è il passaggio in cui l'app viene copiata su un server sempre acceso che le dà un indirizzo internet.
+Fatto questo, l'app si apre da qualsiasi telefono e può essere installata in Home come una vera applicazione.
+
+VERCEL è il servizio consigliato per fare questo:
+- è gratuito per l'uso normale di un'app come questa;
+- è fatto dalle stesse persone che creano Next.js, la tecnologia con cui l'app è costruita;
+- l'app ottiene un indirizzo tipo: https: // auguri. vercel. app oppure https ://auguri. Netlify. App/ 
+
+Importante: pubblicando l'app NON pubblichi i tuoi contatti. Ogni telefono ha le sue liste: chi apre l'indirizzo vede l'app vuota; i tuoi contatti restano solo nel tuo telefono.
+
+Dopo ogni aggiornamento dell'app basta ripetere il deploy: i tuoi dati restano al loro posto.
+
+
+I TUOI DATI / PRIVACY
+---------------------
+- I contatti sono salvati nella memoria del browser del telefono: nessun server, nessun account.
+- Se cancelli i dati del sito dal browser cancelli anche i contatti: utilizza la funzione di esportazione della rubrica descritta sopra (per iPhone e per Android) per tenere una copia di sicurezza.
+- Nessun messaggio parte da solo: sei sempre tu a premere invio nell'app di destinazione.
+
+
+SE QUALCOSA NON VA
+------------------
+- "Il contatto non è su Telegram": rispondi "No, non inviato" al ritorno e usa WhatsApp o SMS.
+- "Ho sbagliato a confermare": apri la card e premi "Ripristina — non inviato".
+- "Ho perso i contatti": reimporta la lista esportata (file .txt o .vcf) in pochi secondi.
+==> RISCHIO BLOCCO DELLE MESSAGGISTICHE: non esistono dati certi ma il rischio aumenta: 
+a. per invii massivi di messaggi oltre i 20 nel giro di pochi minuti (RICORDA: QUESTA APP è MOLTO POTENTE, QUINDI I MESSAGGI SONO INVIATI MOLTO RAPIDAMENTE!)
+b. se i messaggi sono uguali nella struttura, c'è rischio che siano confusi con lo SPAM, ecco il motivo dei messaggi differenziati a rotazione;
+c. fai una pausa di qualche minuto ogni 5 invii andati a buon fine sulla stessa piattaforma; 
+d. cadenza gli invii massivi (40 / 50 onomastici) in vari periodi della giornata. 
+==> IN OGNI CASO: NON SIAMO RESPONSABILI DEL BLOCCO DA PARTE DELLE MESSAGGISTICHE PER SOSPETTO SPAM <==
+
+- Per qualsiasi altro dubbio: scheda Aiuto dentro l'app. Oppure contatta l'ideatore

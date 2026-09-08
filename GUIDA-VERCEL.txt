@@ -1,0 +1,150 @@
+==========================================================
+GUIDA PASSO PASSO — Pubblicare l'app Auguri su VERCEL
+==========================================================
+Tempo necessario: circa 15 minuti la prima volta.
+Costo per questa app: 0 euro, nessuna carta di credito.
+
+
+PRIMA DI INIZIARE
+-----------------
+Ti servono solo due cose, e le hai già:
+- il progetto Auguri caricato su GitHub (fatto);
+- un browser (Chrome, Safari o Firefox).
+Vercel e Netlify fanno lo stesso mestiere: tengono l'app
+viva su internet. Vercel e' quello consigliato per questa
+app perche' e' gratuito e molto piu' generoso (100 GB di
+traffico al mese contro circa 15, e correzioni illimitate).
+
+
+PASSO 1 — Crea l'account Vercel (5 minuti)
+------------------------------------------
+1. Dal computer apri:  https://vercel.com
+2. In alto a destra clicca "Sign Up" (registrati).
+3. Scegli "Continue with GitHub" (il pulsante con il
+   gattino nero di GitHub).
+4. Si apre GitHub e ti chiede il permesso: clicca
+   "Authorize Vercel" (autorizza).
+   Così Vercel puo' vedere i tuoi progetti GitHub e
+   pubblicarli. Non modifica il tuo codice.
+
+Fatto: l'account esiste, il piano gratuito parte da subito
+non serve inserire alcuna carta.
+
+
+PASSO 2 — Importa il progetto (2 minuti)
+----------------------------------------
+1. Ti trovi nella "scrivania" di Vercel (Dashboard).
+   Clicca "Add New..." e poi "Project".
+2. Appare l'elenco dei tuoi progetti GitHub: cerca quello
+   di Auguri e clicca "Import".
+   SE NON LO VEDI: clicca il link "Adjust GitHub App
+   Permissions" sotto l'elenco, e dai a Vercel l'accesso
+   anche a quel repository. Poi torna indietro e riprova.
+
+
+PASSO 3 — Pubblica (2 minuti)
+-----------------------------
+1. Vercel riconosce da solo che l'app e' fatta con Next.js:
+   NON toccare nessuna impostazione, lascia tutto com'e'.
+2. Clicca il pulsante "Deploy" e aspetta 1-2 minuti.
+3. Alla fine vedrai la schermata di congratulazioni:
+   clicca "Continue to Dashboard".
+4. In alto c'e' il tuo indirizzo internet, qualcosa come:
+      https://auguri-xxx.vercel.app
+   Aprilo dal telefono e l'app funziona.
+
+
+PASSO 4 — Metti l'app sul telefono (2 minuti)
+---------------------------------------------
+iPhone / iPad (Safari):
+  1. Apri l'indirizzo con Safari
+  2. Tocca Condividi (quadrato con freccia in su)
+  3. "Aggiungi alla schermata Home" → "Aggiungi"
+
+Android (Chrome):
+  1. Apri l'indirizzo con Chrome
+  2. Menu (tre puntini in alto a destra)
+  3. "Aggiungi alla schermata Home" o "Installa app"
+
+
+E LE PROSSIME VOLTE? (il bello)
+-------------------------------
+- Ogni volta che ti preparo una correzione: sostituisci i
+  file su GitHub, esattamente come hai gia' fatto per
+  Netlify.
+- Vercel si accorge da solo del cambiamento e ripubblica
+  in ~2 minuti. Tu non devi fare altro.
+- Netlify e Vercel possono restare collegati allo STESSO
+  GitHub insieme, senza conflitti: avrai due indirizzi.
+  Quando vorrai, potrai anche scollegare Netlify
+  (Dashboard Netlify → Site settings → generali →
+  "Delete site") — ma nessuna fretta.
+
+
+QUANTO COSTA, COSA COMPRENDE IL PIANO GRATUITO
+----------------------------------------------
+Per l'app Auguri (uso personale):
+- 0 euro, per sempre, senza carta di credito
+- 100 GB di traffico al mese (decine di migliaia di
+  aperture dell'app; tu da solo ne usi pochissimi)
+- correzioni e ripubblicazioni: ILLIMITATE
+- se per caso superassi i limiti, il servizio si ferma
+  ma non arriva mai una bolletta a sorpresa
+
+AVVISO IMPORTANTE per i tuoi progetti futuri:
+il piano gratuito Vercel e' solo per uso PERSONALE e NON
+commerciale. Le app da vendere richiedono il piano Pro
+(20 dollari al mese). Vedi sotto.
+
+
+RACCOMANDAZIONI PER LE TUE APP A PAGAMENTO
+------------------------------------------
+Il tuo progetto di creare app a pagamento e' perfettamente
+fattibile, ecco il percorso consigliato in tre fasi:
+
+1. MENTRE IMPARI (ora):
+   Netlify consente app commerciali anche nel piano
+   gratuito (verificato dai loro termini ufficiali).
+   Attenzione solo ai 300 crediti/mese: circa 15 GB di
+   traffico e ~20 pubblicazioni. Va benissimo per le
+   prime prove con pochi utenti.
+
+2. QUANDO GUADAGNI (le app diventano vere):
+   Vercel Pro a 20 dollari/mese copre TUTTE le tue app
+   insieme (progetti illimitati), con 1.000 GB di
+   traffico. E' il costo standard di chi fa questo
+   mestiere: il primo cliente lo ripaga, e tu lo puoi
+   ricaricare nel prezzo.
+
+3. CON UN CLIENTE GRANDE:
+   si puo' pubblicare l'app nell'account Vercel DEL
+   CLIENTE, cosi' e' lui a pagare il suo hosting e tu
+   resti leggero.
+
+Opzione futura da tenere d'occhio: Cloudflare ha un piano
+gratuito molto generoso che ammette anche l'uso
+commerciale (traffico illimitato). E' un po' piu' tecnico
+da configurare, ma quando le tue app cresceranno lo
+valutiamo insieme.
+
+
+SE QUALCOSA NON VA
+------------------
+- "Non vedo il mio repository" → dai il permesso a Vercel
+  da GitHub (Passo 2, nota in corsivo) e riprova.
+- "Deploy fallito" → riprova una volta; se fallisce di
+  nuovo scrivimi, si sistema in due minuti.
+- Vuoi cambiare l'indirizzo (piu' corto/bello) →
+  Dashboard → progetto → Settings → Domains → add
+- Vuoi un tuo dominio personale (es. www.tuonome.it) →
+  stessa pagina; si collega in 5 minuti.
+- I tuoi contatti NON finiscono su nessun server: restano
+  solo nel telefono, come da progetto.
+
+
+RICORDA
+-------
+- Dentro l'app c'e' la scheda "Aiuto" con questa guida
+  sempre disponibile.
+- Nel pacchetto dell'app trovi anche LEGGIMI.txt con
+  l'uso quotidiano dell'app.

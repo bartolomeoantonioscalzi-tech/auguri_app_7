@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type Contact,
   type Settings,
-  PRESET_TEMPLATES,
+  BIRTHDAY_TEMPLATES,
+  fullSignature,
   renderMessage,
+  sanitizeSignature,
 } from "@/lib/auguri";
 
 interface Props {
@@ -17,64 +19,103 @@ interface Props {
 
 export function ImpostazioniTab({ contacts, settings, onUpdateSettings, onResetAllSends }: Props) {
   const [confirmReset, setConfirmReset] = useState(false);
-  const preview = renderMessage(settings.template, "Maria", settings.signature || "La tua firma");
+  const [signatureInput, setSignatureInput] = useState(settings.signature ?? "");
+  const [qualificationInput, setQualificationInput] = useState(settings.qualification ?? "");
+  const [sigNotice, setSigNotice] = useState<string | null>(null);
   const sentCount = contacts.filter((c) => Object.keys(c.sent ?? {}).length > 0).length;
+
+  useEffect(() => {
+    setSignatureInput(settings.signature ?? "");
+    setQualificationInput(settings.qualification ?? "");
+  }, [settings.signature, settings.qualification]);
+
+  const previewSig =
+    fullSignature({ signature: signatureInput || "La tua firma", qualification: qualificationInput, template: "" }) ||
+    "La tua firma";
+  const preview = renderMessage(BIRTHDAY_TEMPLATES[0], "Maria", previewSig);
+
+  const commitSignature = () => {
+    const { value, changed } = sanitizeSignature(signatureInput);
+    setSignatureInput(value);
+    onUpdateSettings({ signature: value });
+    if (changed) setSigNotice("Firma ripulita in automatico: link, numeri di telefono e simboli non sono consentiti.");
+  };
+
+  const commitQualification = () => {
+    const { value, changed } = sanitizeSignature(qualificationInput);
+    setQualificationInput(value);
+    onUpdateSettings({ qualification: value });
+    if (changed) setSigNotice("Qualifica ripulita in automatico: link, numeri di telefono e simboli non sono consentiti.");
+  };
 
   return (
     <div className="space-y-5 px-4 pb-28 pt-5">
       <header>
         <h1 className="font-serif text-[28px] font-bold text-[#3B2F1E]">Impostazioni</h1>
-        <p className="text-[14px] text-[#8A7A5E]">Firma, testo degli auguri e gestione invii</p>
+        <p className="text-[14px] text-[#8A7A5E]">
+          Firma, qualifica e gestione degli invii. Il testo degli auguri è chiuso (anti-spam).
+        </p>
       </header>
 
       {/* Firma */}
       <section className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4">
-        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Firma</h2>
-        <p className="mt-1 text-[13px] text-[#8A7A5E]">
-          Il nome che appare nei messaggi al posto di {"{firma}"}
+        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Firma (obbligatoria)</h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-[#8A7A5E]">
+          Solo lettere, spazi, punti e virgole (max 40 caratteri): link, numeri e
+          simboli vengono rimossi in automatico.
         </p>
         <input
-          value={settings.signature}
-          onChange={(e) => onUpdateSettings({ signature: e.target.value })}
+          value={signatureInput}
+          onChange={(e) => {
+            setSignatureInput(e.target.value);
+            setSigNotice(null);
+          }}
+          onBlur={commitSignature}
           placeholder="Es. Antonio Scalzi"
+          maxLength={60}
           className="mt-3 h-11 w-full rounded-lg border border-[#DCD2BB] bg-white/70 px-3 text-[15px] text-[#3E3428] outline-none placeholder:text-[#B3A787] focus:border-[#C7B699]"
         />
       </section>
 
-      {/* Template */}
+      {/* Qualifica */}
       <section className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4">
-        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Testo degli auguri</h2>
-        <p className="mt-1 text-[13px] text-[#8A7A5E]">
-          Usa i segnaposto <code className="rounded bg-[#F4EEDF] px-1">{"{nome}"}</code> e{" "}
-          <code className="rounded bg-[#F4EEDF] px-1">{"{firma}"}</code>
+        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Qualifica (facoltativa)</h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-[#8A7A5E]">
+          Comparirà <b>dopo</b> la firma, separata da una virgola.
         </p>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {PRESET_TEMPLATES.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              onClick={() => onUpdateSettings({ template: p.value })}
-              className={`h-9 rounded-lg px-3 text-[14px] font-bold active:scale-[0.98] ${
-                settings.template === p.value
-                  ? "bg-[#362B1D] text-white"
-                  : "bg-[#D8CBAA] text-[#4A3B28]"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          value={settings.template}
-          onChange={(e) => onUpdateSettings({ template: e.target.value })}
-          rows={4}
-          className="mt-3 w-full resize-y rounded-lg border border-[#DCD2BB] bg-white/70 p-3 text-[15px] leading-relaxed text-[#3E3428] outline-none focus:border-[#C7B699]"
+        <input
+          value={qualificationInput}
+          onChange={(e) => {
+            setQualificationInput(e.target.value);
+            setSigNotice(null);
+          }}
+          onBlur={commitQualification}
+          placeholder="Es. consulente erborista"
+          maxLength={60}
+          className="mt-3 h-11 w-full rounded-lg border border-[#DCD2BB] bg-white/70 px-3 text-[15px] text-[#3E3428] outline-none placeholder:text-[#B3A787] focus:border-[#C7B699]"
         />
+        {sigNotice && (
+          <p className="mt-2 rounded-lg bg-[#F6DCC0] px-3 py-2 text-[13px] text-[#935826]">
+            ⓘ {sigNotice}
+          </p>
+        )}
+      </section>
 
+      {/* Testo chiuso */}
+      <section className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4">
+        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">
+          Testo degli auguri (chiuso)
+        </h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-[#8A7A5E]">
+          Il testo non è modificabile: l&apos;app lo costruisce con il nome del
+          contatto e la tua firma. A ogni invio sceglie da sola un modello diverso
+          (rotazione automatica), così i messaggi vicini nel tempo non sono identici
+          e non vengono scambiati per spam. Nessun link, nessun numero, nessun testo libero.
+        </p>
         <div className="mt-3 rounded-lg border-l-[3px] border-[#C9B98F] bg-[#F4EEDF] px-4 py-3">
-          <p className="text-[12px] font-bold uppercase tracking-wide text-[#8A7A5E]">Anteprima</p>
+          <p className="text-[12px] font-bold uppercase tracking-wide text-[#8A7A5E]">
+            Anteprima (uno dei modelli a rotazione)
+          </p>
           <p className="mt-1 font-serif text-[16px] leading-relaxed text-[#3E3428]">{preview}</p>
         </div>
       </section>
@@ -122,29 +163,6 @@ export function ImpostazioniTab({ contacts, settings, onUpdateSettings, onResetA
             </div>
           </div>
         )}
-      </section>
-
-      {/* Come funziona */}
-      <section className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4">
-        <h2 className="font-serif text-[18px] font-bold text-[#3B2F1E]">Come funziona l&rsquo;invio</h2>
-        <ul className="mt-2 space-y-2 text-[14px] leading-relaxed text-[#5C4F3A]">
-          <li>
-            <b>1.</b> Tocca un canale sulla card e conferma: l&rsquo;app si apre con il
-            messaggio pronto (copia di sicurezza anche negli appunti).
-          </li>
-          <li>
-            <b>2.</b> Se il contatto non è su Telegram, è Telegram stesso ad avvisarti
-            (&ldquo;sembra che questo utente non esista&rdquo;): al ritorno rispondi
-            &ldquo;No, non inviato&rdquo; e provi WhatsApp o SMS sulla stessa card.
-          </li>
-          <li>
-            <b>3.</b> Il canale già usato mostra una spunta ✓, ma puoi sempre premere
-            &ldquo;↺ Ripristina&rdquo; per azzerare la card e riprovare.
-          </li>
-        </ul>
-        <p className="mt-2 text-[13px] text-[#8A7A5E]">
-          Guida completa nella scheda <b>Aiuto</b>.
-        </p>
       </section>
     </div>
   );

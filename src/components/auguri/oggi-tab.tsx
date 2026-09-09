@@ -66,41 +66,6 @@ function buildSection(
   return out;
 }
 
-function SectionBlock({
-  title,
-  subtitle,
-  entries,
-  showTitle,
-}: {
-  title: string;
-  subtitle: string;
-  entries: Entry[];
-  showTitle: boolean;
-}) {
-  if (entries.length === 0) return null;
-  return (
-    <div className="mt-5">
-      {showTitle && (
-        <div className="mb-2 flex items-baseline gap-2">
-          <h2 className="font-serif text-[19px] font-bold text-[#3B2F1E]">{title}</h2>
-          <span className="text-[13px] text-[#8A7A5E]">{subtitle}</span>
-        </div>
-      )}
-      <div className="space-y-4">
-        {entries.map((e, i) => (
-          <AuguriCard
-            key={`${e.contact.id}-${e.occasion}-${i}`}
-            contact={e.contact}
-            settings={e.contact ? (arguments[0] as never) : undefined}
-            occasion={e.occasion}
-            tranche={e.tranche}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }: Props) {
   const [nameDays, setNameDays] = useState<NameDaysData>({ map: {}, warnings: [], loaded: false });
   const [showTop, setShowTop] = useState(false);

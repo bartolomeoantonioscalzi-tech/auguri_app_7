@@ -1,24 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type Channel,
   type Contact,
+  type Occasion,
   type Settings,
+  type Tranche,
   CHANNEL_EMOJI,
   CHANNEL_LABEL,
+  advanceRotation,
+  buildMessage,
   channelUrl,
+  displayName,
   formatTime,
   initialsOf,
+  isDeceased,
+  isInsideSendWindow,
   pendingChannels,
-  renderMessage,
   sentChannels,
+  useRotationIndex,
 } from "@/lib/auguri";
 import { cn } from "@/lib/utils";
 
 interface Props {
   contact: Contact;
   settings: Settings;
+  occasion: Occasion;
+  tranche: Tranche;
   onMarkSent: (id: string, channel: Channel) => void;
   onReset: (id: string) => void;
 }
@@ -30,12 +39,36 @@ const CONFIRM_NOTE: Record<Channel, string> = {
   sms: "Si aprirà l'app Messaggi con il testo già pronto.",
 };
 
-export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) {
+const OCCASION_BADGE: Record<Occasion, { label: string; className: string }> = {
+  compleanno: { label: "COMPLEANNO", className: "bg-[#D8CBAA] text-[#6B5836]" },
+  onomastico: { label: "ONOMASTICO", className: "bg-[#C9DCE0] text-[#2F5B5B]" },
+};
+
+const DECEASED_BADGE = { label: "RICORDO", className: "bg-[#D8D3CB] text-[#4A4540]" };
+
+const TRANCHE_BADGE: Record<Tranche, { label: string; className: string } | null> = {
+  [-1]: { label: "IN ANTICIPO", className: "bg-[#F6DCC0] text-[#935826]" },
+  0: null,
+  1: { label: "IN RITARDO", className: "bg-[#F6DCC0] text-[#935826]" },
+};
+
+export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, onReset }: Props) {
   const [confirming, setConfirming] = useState<Channel | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [lastMessage, setLastMessage] = useState<string | null>(null);
 
-  const message = renderMessage(settings.template, contact.name, settings.signature);
+  // Reattivo alla rotazione: l'anteprima segue il modello corrente.
+  useRotationIndex();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const deceased = isDeceased(contact.name);
+  const name = displayName(contact.name);
+  const previewMessage = mounted
+    ? buildMessage(contact, settings, occasion, tranche)
+    : "";
+
   const done = sentChannels(contact);
   const pending = pendingChannels(contact);
   const sent = done.length > 0;
@@ -45,21 +78,23 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
     if (!confirming) return;
     const channel = confirming;
     setConfirming(null);
+    // Il messaggio è composto PRIMA di avanzare la rotazione:
+    // l'anteprima vista corrisponde esattamente a ciò che parte.
+    const messageNow = buildMessage(contact, settings, occasion, tranche);
     onMarkSent(contact.id, channel);
-    // Il testo viene messo negli appunti PRIMA di aprire il canale:
-    // per Telegram (tg://resolve) non c'è precompilazione, si incolla in chat.
+    if (!deceased) advanceRotation(); // i modelli di ricordo non ruotano
+    setLastMessage(messageNow);
     try {
-      await navigator.clipboard.writeText(message);
+      await navigator.clipboard.writeText(messageNow);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
       // appunti non disponibili: prosegui comunque
     }
-    const url = channelUrl(channel, contact.phone, message);
+    const url = channelUrl(channel, contact.phone, messageNow);
     if (channel === "whatsapp") {
       window.open(url, "_blank");
     } else {
-      // schemi custom (tg:, sms:) — navigazione diretta, senza finestre a comparsa
       window.location.href = url;
     }
   };
@@ -68,13 +103,14 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
     ? Math.max(...done.map((ch) => contact.sent?.[ch]?.at ?? 0))
     : 0;
 
+  const message = sent && lastMessage ? lastMessage : previewMessage;
+  const occasionBadge = deceased ? DECEASED_BADGE : OCCASION_BADGE[occasion];
+  const trancheBadge = TRANCHE_BADGE[tranche];
+
   return (
     <article
-      className={cn(
-        "rounded-[18px] border bg-[#FBF7EE] p-4 shadow-[0_1px_3px_rgba(74,59,40,0.08)]",
-        "border-[#E7DEC9]"
-      )}
-      aria-label={`Contatto ${contact.name}`}
+      className="rounded-[18px] border border-[#E7DEC9] bg-[#FBF7EE] p-4 shadow-[0_1px_3px_rgba(74,59,40,0.08)]"
+      aria-label={`Contatto ${name}`}
     >
       {/* Intestazione */}
       <div className="flex items-center gap-3">
@@ -83,7 +119,7 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
         </div>
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-serif text-[22px] font-bold leading-tight text-[#3B2F1E]">
-            {contact.name}
+            {name}
           </h2>
           <p className="text-[15px] text-[#8A7A5E]">{contact.phone}</p>
         </div>
@@ -94,9 +130,10 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
         )}
       </div>
 
-      {/* Badge stato */}
+      {/* Badge */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Badge className="bg-[#D8CBAA] text-[#6B5836]">COMPLEANNO</Badge>
+        <Badge className={occasionBadge.className}>{occasionBadge.label}</Badge>
+        {trancheBadge && <Badge className={trancheBadge.className}>{trancheBadge.label}</Badge>}
         {allConfirmed ? (
           <Badge className="bg-[#BFD8BC] text-[#2F5B33]">CONFERMATO</Badge>
         ) : sent ? (
@@ -110,8 +147,13 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
       <blockquote className="mt-3 rounded-lg border-l-[3px] border-[#C9B98F] bg-[#F4EEDF] px-4 py-3 font-serif text-[17px] leading-relaxed text-[#3E3428]">
         {message}
       </blockquote>
+      {!deceased && (
+        <p className="mt-1 text-[12px] text-[#8A7A5E]">
+          Il testo è scelto dall'app tra modelli a rotazione: varia a ogni invio.
+        </p>
+      )}
 
-      {/* Esito: in attesa di conferma o confermato */}
+      {/* Esito */}
       {sent && (
         <div className="mt-3 space-y-1 text-center">
           {allConfirmed ? (
@@ -136,11 +178,17 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
       {confirming ? (
         <div className="mt-4">
           <p className="mb-3 text-center font-serif text-[17px] text-[#3E3428]">
-            Confermi invio a <b>{contact.name}</b>?
+            Confermi invio a <b>{name}</b>?
           </p>
           <p className="mb-3 text-center text-[13px] leading-snug text-[#8A7A5E]">
             {CONFIRM_NOTE[confirming]}
           </p>
+          {!isInsideSendWindow() && (
+            <p className="mb-3 rounded-lg bg-[#F6DCC0] px-3 py-2 text-center text-[13px] leading-snug text-[#935826]">
+              ⏰ Fuori dalla finestra consigliata (07:00–22:00): il destinatario
+              potrebbe dormire. Invia solo se sei sicuro.
+            </p>
+          )}
           <div className="flex gap-3">
             <button
               type="button"
@@ -160,8 +208,7 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
         </div>
       ) : (
         <>
-          {/* Canali: quelli già usati mostrano la spunta, gli ALTRI restano
-              sempre attivi — nessun contatto "bruciato" */}
+          {/* Canali: usati = spunta ✓, gli altri sempre attivi */}
           <div className="mt-4 grid grid-cols-3 gap-3">
             {(["telegram", "whatsapp", "sms"] as Channel[]).map((ch) => {
               const used = done.includes(ch);
@@ -188,7 +235,7 @@ export function BirthdayCard({ contact, settings, onMarkSent, onReset }: Props) 
             })}
           </div>
 
-          {/* Ripristino manuale della card */}
+          {/* Ripristino */}
           {sent && (
             <div className="mt-3 text-center">
               {confirmReset ? (

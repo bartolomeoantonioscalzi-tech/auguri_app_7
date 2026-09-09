@@ -2,27 +2,119 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  type Channel,
   type Contact,
-  type Settings,
+  type Occasion,
+  type Tranche,
   RATE_LIMIT_NOTICE,
+  dayKeyOffset,
   formatTodayDate,
-  isBirthdayToday,
+  hasNameDayOn,
+  isBirthdayOn,
+  isDeceased,
   isSent,
+  loadNameDays,
+  todayKey,
+  type NameDaysData,
 } from "@/lib/auguri";
-import { BirthdayCard } from "./birthday-card";
+import { AuguriCard } from "./birthday-card";
 
 interface Props {
   contacts: Contact[];
-  settings: Settings;
-  onMarkSent: (id: string, channel: Channel) => void;
+  settings: import("@/lib/auguri").Settings;
+  onMarkSent: (id: string, channel: "telegram" | "whatsapp" | "sms") => void;
   onReset: (id: string) => void;
   onGoImport: () => void;
 }
 
+interface Entry {
+  contact: Contact;
+  occasion: Occasion;
+  tranche: Tranche;
+}
+
+interface Section {
+  birthdays: Entry[];
+  onomastici: Entry[];
+  defunti: Entry[];
+}
+
+function buildSection(
+  contacts: Contact[],
+  nameDays: NameDaysData,
+  dateKey: string,
+  tranche: Tranche
+): Section {
+  const out: Section = { birthdays: [], onomastici: [], defunti: [] };
+  for (const contact of contacts) {
+    const deceased = isDeceased(contact.name);
+    const bday = isBirthdayOn(contact, dateKey);
+    const nameday = hasNameDayOn(contact, nameDays, dateKey);
+    if (!bday && !nameday) continue;
+    if (deceased) {
+      // Defunti: SOLO nella tranche 0 (mai ±1)
+      if (tranche === 0) out.defunti.push({ contact, occasion: bday ? "compleanno" : "onomastico", tranche: 0 });
+      continue;
+    }
+    if (tranche === -1) {
+      // Anticipo: SOLO onomastici (mai compleanni)
+      if (nameday) out.onomastici.push({ contact, occasion: "onomastico", tranche });
+    } else {
+      if (bday) out.birthdays.push({ contact, occasion: "compleanno", tranche });
+      if (nameday) out.onomastici.push({ contact, occasion: "onomastico", tranche });
+    }
+  }
+  return out;
+}
+
+function SectionBlock({
+  title,
+  subtitle,
+  entries,
+  showTitle,
+}: {
+  title: string;
+  subtitle: string;
+  entries: Entry[];
+  showTitle: boolean;
+}) {
+  if (entries.length === 0) return null;
+  return (
+    <div className="mt-5">
+      {showTitle && (
+        <div className="mb-2 flex items-baseline gap-2">
+          <h2 className="font-serif text-[19px] font-bold text-[#3B2F1E]">{title}</h2>
+          <span className="text-[13px] text-[#8A7A5E]">{subtitle}</span>
+        </div>
+      )}
+      <div className="space-y-4">
+        {entries.map((e, i) => (
+          <AuguriCard
+            key={`${e.contact.id}-${e.occasion}-${i}`}
+            contact={e.contact}
+            settings={e.contact ? (arguments[0] as never) : undefined}
+            occasion={e.occasion}
+            tranche={e.tranche}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }: Props) {
+  const [nameDays, setNameDays] = useState<NameDaysData>({ map: {}, warnings: [], loaded: false });
   const [showTop, setShowTop] = useState(false);
   const [onlyPending, setOnlyPending] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void loadNameDays().then((d) => {
+      if (alive) setNameDays(d);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setShowTop(window.scrollY > 300);
@@ -30,11 +122,34 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const birthdays = useMemo(() => contacts.filter(isBirthdayToday), [contacts]);
-  const pending = birthdays.filter((c) => !isSent(c));
-  const done = birthdays.filter((c) => isSent(c));
-  const ordered = [...pending, ...done];
-  const visible = onlyPending ? ordered.filter((c) => !isSent(c)) : ordered;
+  const sections = useMemo(() => {
+    const s0 = buildSection(contacts, nameDays, todayKey(), 0);
+    const sm1 = buildSection(contacts, nameDays, dayKeyOffset(1), -1);
+    const sp1 = buildSection(contacts, nameDays, dayKeyOffset(-1), 1);
+    return { s0, sm1, sp1 };
+  }, [contacts, nameDays]);
+
+  const all: Entry[] = [
+    ...sections.s0.birthdays,
+    ...sections.s0.onomastici,
+    ...sections.s0.defunti,
+    ...sections.sm1.onomastici,
+    ...sections.sp1.birthdays,
+    ...sections.sp1.onomastici,
+  ];
+  const pendingCount = all.filter((e) => !isSent(e.contact)).length;
+  const total = all.length;
+
+  const filter = (entries: Entry[]) => (onlyPending ? entries.filter((e) => !isSent(e.contact)) : entries);
+
+  const cardProps = (e: Entry) => ({
+    contact: e.contact,
+    settings,
+    occasion: e.occasion,
+    tranche: e.tranche,
+    onMarkSent,
+    onReset,
+  });
 
   return (
     <div className="px-4 pb-28 pt-5">
@@ -44,10 +159,10 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
             <h1 className="font-serif text-[28px] font-bold text-[#3B2F1E]">Oggi</h1>
             <p className="text-[14px] capitalize text-[#8A7A5E]">{formatTodayDate()}</p>
             <p className="mt-1 text-[14px] font-bold text-[#7A6528]">
-              {birthdays.length} compleanni · {pending.length} da inviare
+              {total} card · {pendingCount} da inviare
             </p>
           </div>
-          {birthdays.length > 0 && (
+          {total > 0 && (
             <button
               type="button"
               onClick={() => setOnlyPending((v) => !v)}
@@ -65,11 +180,15 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
         </div>
       </header>
 
-      {birthdays.length > 0 && (
+      {!nameDays.loaded && (
         <div className="mb-4 rounded-xl border border-[#E7DEC9] bg-[#F4EEDF] px-4 py-3">
-          <p className="text-[13.5px] leading-relaxed text-[#6B5B40]">
-            ⓘ {RATE_LIMIT_NOTICE}
-          </p>
+          <p className="text-[13.5px] text-[#6B5B40]">⏳ Caricamento onomastici…</p>
+        </div>
+      )}
+
+      {total > 0 && (
+        <div className="mb-4 rounded-xl border border-[#E7DEC9] bg-[#F4EEDF] px-4 py-3">
+          <p className="text-[13.5px] leading-relaxed text-[#6B5B40]">ⓘ {RATE_LIMIT_NOTICE}</p>
         </div>
       )}
 
@@ -77,8 +196,8 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
         <div className="rounded-[18px] border border-dashed border-[#C9B98F] bg-[#FBF7EE]/70 p-8 text-center">
           <p className="font-serif text-[19px] font-bold text-[#3B2F1E]">Nessun contatto</p>
           <p className="mx-auto mt-2 max-w-[280px] text-[14px] leading-relaxed text-[#8A7A5E]">
-            Importa i festeggiati di oggi dalla scheda &ldquo;Importa&rdquo; per cominciare
-            a inviare gli auguri con Telegram, WhatsApp o SMS.
+            Importa la rubrica dalla scheda &ldquo;Importa&rdquo; per cominciare a
+            inviare gli auguri con Telegram, WhatsApp o SMS.
           </p>
           <button
             type="button"
@@ -88,29 +207,83 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
             📥 Vai a Importa
           </button>
         </div>
-      ) : visible.length === 0 ? (
+      ) : total === 0 ? (
         <div className="rounded-[18px] border border-dashed border-[#C9B98F] bg-[#FBF7EE]/70 p-8 text-center">
           <p className="font-serif text-[19px] font-bold text-[#3B2F1E]">
-            {onlyPending ? "Tutti gli auguri sono stati inviati 🎉" : "Nessun compleanno oggi"}
+            Nessuna ricorrenza oggi, domani o ieri
           </p>
           <p className="mx-auto mt-2 max-w-[300px] text-[14px] leading-relaxed text-[#8A7A5E]">
-            {onlyPending
-              ? "Non ci sono più card da inviare: disattiva il filtro per rivedere gli invii di oggi."
-              : "I contatti importati non festeggiano il compleanno oggi. Puoi controllare le date nella scheda \u201cImporta\u201d."}
+            Compleanni, onomastici (e ricordi) compaiono qui tre giorni alla volta:
+            il giorno prima, il giorno stesso e il giorno dopo.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {visible.map((c) => (
-            <BirthdayCard
-              key={c.id}
-              contact={c}
-              settings={settings}
-              onMarkSent={onMarkSent}
-              onReset={onReset}
-            />
-          ))}
-        </div>
+        <>
+          {/* OGGI (tranche 0): compleanni → onomastici → ricordo */}
+          <SectionBlock title="Oggi" subtitle="" entries={[]} showTitle={false} />
+          {filter(sections.s0.birthdays).length > 0 && (
+            <div className="space-y-4">
+              {filter(sections.s0.birthdays).map((e, i) => (
+                <AuguriCard key={`b0-${e.contact.id}-${i}`} {...cardProps(e)} />
+              ))}
+            </div>
+          )}
+          {filter(sections.s0.onomastici).length > 0 && (
+            <>
+              <h2 className="mb-2 mt-5 font-serif text-[19px] font-bold text-[#3B2F1E]">
+                Onomastici di oggi
+              </h2>
+              <div className="space-y-4">
+                {filter(sections.s0.onomastici).map((e, i) => (
+                  <AuguriCard key={`o0-${e.contact.id}-${i}`} {...cardProps(e)} />
+                ))}
+              </div>
+            </>
+          )}
+          {filter(sections.s0.defunti).length > 0 && (
+            <>
+              <h2 className="mb-2 mt-5 font-serif text-[19px] font-bold text-[#3B2F1E]">
+                Ricordo 🕊️
+              </h2>
+              <div className="space-y-4">
+                {filter(sections.s0.defunti).map((e, i) => (
+                  <AuguriCard key={`d0-${e.contact.id}-${i}`} {...cardProps(e)} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* DOMANI (tranche -1): solo onomastici */}
+          {filter(sections.sm1.onomastici).length > 0 && (
+            <>
+              <h2 className="mb-2 mt-7 font-serif text-[19px] font-bold text-[#3B2F1E]">
+                Domani · in anticipo
+              </h2>
+              <div className="space-y-4">
+                {filter(sections.sm1.onomastici).map((e, i) => (
+                  <AuguriCard key={`om1-${e.contact.id}-${i}`} {...cardProps(e)} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* IERI (tranche +1): compleanni e onomastici, mai defunti */}
+          {(filter(sections.sp1.birthdays).length > 0 || filter(sections.sp1.onomastici).length > 0) && (
+            <>
+              <h2 className="mb-2 mt-7 font-serif text-[19px] font-bold text-[#3B2F1E]">
+                Ieri · in ritardo
+              </h2>
+              <div className="space-y-4">
+                {filter(sections.sp1.birthdays).map((e, i) => (
+                  <AuguriCard key={`bp1-${e.contact.id}-${i}`} {...cardProps(e)} />
+                ))}
+                {filter(sections.sp1.onomastici).map((e, i) => (
+                  <AuguriCard key={`op1-${e.contact.id}-${i}`} {...cardProps(e)} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       {showTop && (

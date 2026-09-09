@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  type Channel,
   type Contact,
   type Occasion,
+  type Settings,
   type Tranche,
   RATE_LIMIT_NOTICE,
   dayKeyOffset,
@@ -18,10 +20,14 @@ import {
 } from "@/lib/auguri";
 import { AuguriCard } from "./birthday-card";
 
+// Anti-blocco: all'apertura ogni sezione mostra al massimo questo
+// numero di card; le altre si aprono con "Mostra tutti gli altri (N)".
+const SECTION_LIMIT = 20;
+
 interface Props {
   contacts: Contact[];
-  settings: import("@/lib/auguri").Settings;
-  onMarkSent: (id: string, channel: "telegram" | "whatsapp" | "sms") => void;
+  settings: Settings;
+  onMarkSent: (id: string, channel: Channel) => void;
   onReset: (id: string) => void;
   onGoImport: () => void;
 }
@@ -51,12 +57,11 @@ function buildSection(
     const nameday = hasNameDayOn(contact, nameDays, dateKey);
     if (!bday && !nameday) continue;
     if (deceased) {
-      // Defunti: SOLO nella tranche 0 (mai ±1)
-      if (tranche === 0) out.defunti.push({ contact, occasion: bday ? "compleanno" : "onomastico", tranche: 0 });
+      if (tranche === 0)
+        out.defunti.push({ contact, occasion: bday ? "compleanno" : "onomastico", tranche: 0 });
       continue;
     }
     if (tranche === -1) {
-      // Anticipo: SOLO onomastici (mai compleanni)
       if (nameday) out.onomastici.push({ contact, occasion: "onomastico", tranche });
     } else {
       if (bday) out.birthdays.push({ contact, occasion: "compleanno", tranche });
@@ -70,6 +75,7 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
   const [nameDays, setNameDays] = useState<NameDaysData>({ map: {}, warnings: [], loaded: false });
   const [showTop, setShowTop] = useState(false);
   const [onlyPending, setOnlyPending] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let alive = true;
@@ -105,7 +111,8 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
   const pendingCount = all.filter((e) => !isSent(e.contact)).length;
   const total = all.length;
 
-  const filter = (entries: Entry[]) => (onlyPending ? entries.filter((e) => !isSent(e.contact)) : entries);
+  const filter = (entries: Entry[]) =>
+    onlyPending ? entries.filter((e) => !isSent(e.contact)) : entries;
 
   const cardProps = (e: Entry) => ({
     contact: e.contact,
@@ -115,6 +122,40 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
     onMarkSent,
     onReset,
   });
+
+  // Lista con limite iniziale + espansione
+  const renderCards = (entries: Entry[], listKey: string) => {
+    const open = !!expanded[listKey];
+    const visible = open ? entries : entries.slice(0, SECTION_LIMIT);
+    return (
+      <>
+        <div className="space-y-4">
+          {visible.map((e, i) => (
+            <AuguriCard key={`${listKey}-${e.contact.id}-${e.occasion}-${i}`} {...cardProps(e)} />
+          ))}
+        </div>
+        {entries.length > SECTION_LIMIT && (
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={() => setExpanded((m) => ({ ...m, [listKey]: !m[listKey] }))}
+              className="rounded-full border-2 border-[#B3A787] px-4 py-2 font-serif text-[15px] font-bold text-[#7A6528]"
+            >
+              {open
+                ? "Mostra solo i primi"
+                : `Mostra tutti gli altri (${entries.length - SECTION_LIMIT})`}
+            </button>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderHeading = (title: string, count: number) => (
+    <h2 className="mb-2 mt-7 font-serif text-[19px] font-bold text-[#3B2F1E]">
+      {title} <span className="text-[14px] font-normal text-[#8A7A5E]">({count})</span>
+    </h2>
+  );
 
   return (
     <div className="px-4 pb-28 pt-5">
@@ -185,67 +226,54 @@ export function OggiTab({ contacts, settings, onMarkSent, onReset, onGoImport }:
       ) : (
         <>
           {/* OGGI (tranche 0): compleanni → onomastici → ricordo */}
-          <SectionBlock title="Oggi" subtitle="" entries={[]} showTitle={false} />
           {filter(sections.s0.birthdays).length > 0 && (
-            <div className="space-y-4">
-              {filter(sections.s0.birthdays).map((e, i) => (
-                <AuguriCard key={`b0-${e.contact.id}-${i}`} {...cardProps(e)} />
-              ))}
-            </div>
+            <>
+              <h2 className="mb-2 mt-5 font-serif text-[19px] font-bold text-[#3B2F1E]">
+                Compleanni di oggi{" "}
+                <span className="text-[14px] font-normal text-[#8A7A5E]">
+                  ({filter(sections.s0.birthdays).length})
+                </span>
+              </h2>
+              {renderCards(filter(sections.s0.birthdays), "s0b")}
+            </>
           )}
           {filter(sections.s0.onomastici).length > 0 && (
             <>
-              <h2 className="mb-2 mt-5 font-serif text-[19px] font-bold text-[#3B2F1E]">
-                Onomastici di oggi
-              </h2>
-              <div className="space-y-4">
-                {filter(sections.s0.onomastici).map((e, i) => (
-                  <AuguriCard key={`o0-${e.contact.id}-${i}`} {...cardProps(e)} />
-                ))}
-              </div>
+              {renderHeading(
+                "Onomastici di oggi",
+                filter(sections.s0.onomastici).length
+              )}
+              {renderCards(filter(sections.s0.onomastici), "s0o")}
             </>
           )}
           {filter(sections.s0.defunti).length > 0 && (
             <>
-              <h2 className="mb-2 mt-5 font-serif text-[19px] font-bold text-[#3B2F1E]">
-                Ricordo 🕊️
-              </h2>
-              <div className="space-y-4">
-                {filter(sections.s0.defunti).map((e, i) => (
-                  <AuguriCard key={`d0-${e.contact.id}-${i}`} {...cardProps(e)} />
-                ))}
-              </div>
+              {renderHeading("Ricordo 🕊️", filter(sections.s0.defunti).length)}
+              {renderCards(filter(sections.s0.defunti), "s0d")}
             </>
           )}
 
           {/* DOMANI (tranche -1): solo onomastici */}
           {filter(sections.sm1.onomastici).length > 0 && (
             <>
-              <h2 className="mb-2 mt-7 font-serif text-[19px] font-bold text-[#3B2F1E]">
-                Domani · in anticipo
-              </h2>
-              <div className="space-y-4">
-                {filter(sections.sm1.onomastici).map((e, i) => (
-                  <AuguriCard key={`om1-${e.contact.id}-${i}`} {...cardProps(e)} />
-                ))}
-              </div>
+              {renderHeading(
+                "Domani · in anticipo",
+                filter(sections.sm1.onomastici).length
+              )}
+              {renderCards(filter(sections.sm1.onomastici), "sm1o")}
             </>
           )}
 
           {/* IERI (tranche +1): compleanni e onomastici, mai defunti */}
-          {(filter(sections.sp1.birthdays).length > 0 || filter(sections.sp1.onomastici).length > 0) && (
+          {(filter(sections.sp1.birthdays).length > 0 ||
+            filter(sections.sp1.onomastici).length > 0) && (
             <>
-              <h2 className="mb-2 mt-7 font-serif text-[19px] font-bold text-[#3B2F1E]">
-                Ieri · in ritardo
-              </h2>
-              <div className="space-y-4">
-                {filter(sections.sp1.birthdays).map((e, i) => (
-                  <AuguriCard key={`bp1-${e.contact.id}-${i}`} {...cardProps(e)} />
-                ))}
-                {filter(sections.sp1.onomastici).map((e, i) => (
-                  <AuguriCard key={`op1-${e.contact.id}-${i}`} {...cardProps(e)} />
-                ))}
-              </div>
+              {renderHeading(
+                "Ieri · in ritardo",
+                filter(sections.sp1.birthdays).length + filter(sections.sp1.onomastici).length
+              )}
+              {renderCards(filter(sections.sp1.birthdays), "sp1b")}
+              {renderCards(filter(sections.sp1.onomastici), "sp1o")}
             </>
           )}
         </>

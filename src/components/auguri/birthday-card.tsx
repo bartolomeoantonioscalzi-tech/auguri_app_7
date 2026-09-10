@@ -63,12 +63,10 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
   const allPhones = phonesOf(contact);
   const [selectedPhone, setSelectedPhone] = useState<string>(allPhones[0] ?? "");
 
-  // Se il contatto cambia (es. reimport), riallinea il numero selezionato
   useEffect(() => {
     setSelectedPhone(phonesOf(contact)[0] ?? "");
   }, [contact.id, contact.phone, contact.phones?.join("|")]);
 
-  // Reattivo alla rotazione: l'anteprima segue il modello corrente.
   useRotationIndex();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -151,9 +149,7 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
                 aria-pressed={selectedPhone === p}
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-[14px] font-bold transition-colors",
-                  selectedPhone === p
-                    ? "bg-[#362B1D] text-white"
-                    : "bg-[#D8CBAA] text-[#4A3B28]"
+                  selectedPhone === p ? "bg-[#362B1D] text-white" : "bg-[#D8CBAA] text-[#4A3B28]"
                 )}
               >
                 {p}
@@ -248,10 +244,18 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
         </div>
       ) : (
         <>
-          {/* Canali: usati = spunta ✓, gli altri sempre attivi */}
+          {/* Canali: pendente = ombra leggera; confermato tutto = tutti ombreggiati */}
           <div className="mt-4 grid grid-cols-3 gap-3">
             {(["telegram", "whatsapp", "sms"] as Channel[]).map((ch) => {
               const used = done.includes(ch);
+              const awaiting = pending.includes(ch);
+              const shade = allConfirmed
+                ? "opacity-40 grayscale"
+                : used
+                  ? awaiting
+                    ? "opacity-60 grayscale shadow-inner" // usato, esito non ancora confermato
+                    : "opacity-45 grayscale" // confermato su questo canale
+                  : "";
               return (
                 <button
                   key={ch}
@@ -264,7 +268,8 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
                     ch === "telegram" && "bg-[#45A3E5]",
                     ch === "whatsapp" && "bg-[#40C351]",
                     ch === "sms" && "bg-[#999793]",
-                    used && "cursor-default opacity-45"
+                    shade,
+                    used && "cursor-default"
                   )}
                   aria-label={used ? `${CHANNEL_LABEL[ch]} già usato` : `Invia con ${CHANNEL_LABEL[ch]}`}
                 >
@@ -275,7 +280,7 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
             })}
           </div>
 
-          {/* Ripristino */}
+          {/* Ripristino: sempre disponibile dopo un tentativo, su OGNI tranche */}
           {sent && (
             <div className="mt-3 text-center">
               {confirmReset ? (

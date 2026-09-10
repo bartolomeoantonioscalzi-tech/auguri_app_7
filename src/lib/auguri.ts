@@ -5,10 +5,12 @@
 // rotazione automatica a ogni invio, unica parte personale
 // = firma (+ qualifica facoltativa), entrambe sanificate.
 //
-// TRANCHE: -1 solo onomastici ("in anticipo" prima della
-// firma), 0 tutti, +1 compleanni e onomastici ("in ritardo"
-// dopo la firma). Defunti: SOLO giorno 0, mai ±1, nessun
-// marker. Compleanni: mai -1.
+// TRANCHE: -1 solo onomastici, 0 tutti, +1 compleanni e
+// onomastici. Defunti: SOLO giorno 0, mai ±1. Compleanni: mai -1.
+// Il marker {quando} ("in anticipo"/"in ritardo") è attaccato
+// ALLA FRASE DI AUGURI: ciò che arriva in anticipo o in ritardo
+// è l'augurio, non la firma. Es.: «Maria, cento di questi giorni,
+// in anticipo!» Nei messaggi del giorno {quando} sparisce.
 //
 // DEFUNTI: flag MORTO/MORTA dentro il campo Nome; il nome
 // nei messaggi è sempre pulito del flag.
@@ -17,7 +19,7 @@
 //
 // MULTI-TELEFONO: un contatto può avere più numeri (phones[]);
 // il primo è quello principale. I dati salvati dalle versioni
-// precedenti (singolo phone) vengono convertiti al volo.
+// precedenti (singolo phone) restano validi.
 //
 // BUG FIX "contatto bruciato": stato invio PER CANALE,
 // altri canali sempre attivi, card ripristinabile.
@@ -37,7 +39,7 @@ export interface SendRecord {
 export interface Contact {
   id: string;
   name: string;
-  phone: string; // PRINCIPALE: primo numero (compatibilità con le versioni precedenti)
+  phone: string; // PRINCIPALE: primo numero (compatibilità)
   phones?: string[]; // TUTTI i numeri (se assente o vuoto: solo phone)
   birthday?: string; // "gg/mm" (opzionale)
   sent?: Partial<Record<Channel, SendRecord>>;
@@ -74,23 +76,25 @@ export function phoneFor(contact: Contact, selected?: string | null): string {
 }
 
 // ------------------------------------------------------------
-// Modelli degli auguri — CHIUSI, gender-free
+// Modelli degli auguri — CHIUSI, gender-free.
+// {quando} = "" (giorno 0) | "in anticipo" (-1) | "in ritardo" (+1),
+// attaccato alla frase di auguri.
 // ------------------------------------------------------------
 
 export const BIRTHDAY_TEMPLATES: string[] = [
-  "Tanti auguri di buon compleanno, {nome}! Un caro saluto, {firma}",
-  "Buon compleanno, {nome}! Tantissimi auguri di una giornata splendida. {firma}",
-  "Augurissimi, {nome}! Tante belle cose in questo giorno speciale. {firma}",
-  "Ciao {nome}, i migliori auguri per il tuo compleanno! {firma}",
-  "{nome}, cento di questi giorni! Tanti auguri di buon compleanno. {firma}",
+  "Tanti auguri di buon compleanno, {nome}, {quando}! Un caro saluto, {firma}",
+  "Buon compleanno, {nome}, {quando}! Tantissimi auguri di una giornata splendida. {firma}",
+  "Augurissimi, {nome}, {quando}! Tante belle cose in questo giorno speciale. {firma}",
+  "Ciao {nome}, i migliori auguri per il tuo compleanno, {quando}! {firma}",
+  "{nome}, cento di questi giorni, {quando}! Tanti auguri di buon compleanno. {firma}",
 ];
 
 export const ONOMASTICO_TEMPLATES: string[] = [
-  "Buon onomastico, {nome}! Un caro saluto, {firma}",
-  "Tanti auguri per il tuo onomastico, {nome}! {firma}",
-  "Augurissimi di buon onomastico, {nome}! Tante belle cose. {firma}",
-  "Ciao {nome}, tanti auguri per il tuo onomastico! {firma}",
-  "{nome}, tanti auguri per la festa del tuo nome! {firma}",
+  "Buon onomastico, {nome}, {quando}! Un caro saluto, {firma}",
+  "Tanti auguri per il tuo onomastico, {nome}, {quando}! {firma}",
+  "Augurissimi di buon onomastico, {nome}, {quando}! Tante belle cose. {firma}",
+  "Ciao {nome}, tanti auguri per il tuo onomastico, {quando}! {firma}",
+  "{nome}, tanti auguri per la festa del tuo nome, {quando}! {firma}",
 ];
 
 export const DECEASED_BIRTHDAY_TEMPLATE =
@@ -101,9 +105,6 @@ export const DECEASED_ONOMASTICO_TEMPLATE =
 
 // Compatibilità con dati salvati dalle versioni precedenti
 export const DEFAULT_TEMPLATE = BIRTHDAY_TEMPLATES[0];
-export const PRESET_TEMPLATES: { label: string; value: string }[] = BIRTHDAY_TEMPLATES.map(
-  (value, i) => ({ label: `Modello ${i+1}`, value })
-);
 
 export const DEFAULT_SETTINGS: Settings = {
   signature: "Antonio Scalzi",
@@ -155,7 +156,7 @@ export function fullSignature(settings: Settings): string {
 }
 
 // ------------------------------------------------------------
-// Composizione messaggi (con marker di tranche integrati)
+// Composizione messaggi
 // ------------------------------------------------------------
 
 export function renderMessage(
@@ -165,18 +166,18 @@ export function renderMessage(
   tranche: Tranche = 0
 ): string {
   let t = template;
-  if (tranche === -1) {
-    // "in anticipo" PRIMA della firma: «…, in anticipo, {firma}»
-    t = t.replace("{firma}", "in anticipo, {firma}");
+  // Il marker è attaccato agli auguri ({quando} sta accanto alla
+  // frase di auguri, non alla firma): ciò che arriva in anticipo
+  // o in ritardo è l'augurio. Nel giorno 0 sparisce con la virgola.
+  const quando = tranche === -1 ? "in anticipo" : tranche === 1 ? "in ritardo" : "";
+  if (quando) {
+    t = t.replace(/\{quando\}/g, quando);
+  } else {
+    t = t.replace(/\s*,\s*\{quando\}/g, "");
   }
-  const msg = t
+  return t
     .replaceAll("{nome}", (name ?? "").trim())
     .replaceAll("{firma}", signature);
-  if (tranche === 1) {
-    // "in ritardo" DOPO la firma: «…, {firma}, in ritardo»
-    return `${msg}, in ritardo`;
-  }
-  return msg;
 }
 
 /** Modello corrente della rotazione (senza avanzare il contatore). */
@@ -492,17 +493,6 @@ export function hasNameDayOn(contact: Contact, data: NameDaysData, key: string):
   return nameDaysOf(contact, data).includes(key);
 }
 
-/** NPP del contatto che festeggiano nella data key (per etichette). */
-export function matchedNameDays(contact: Contact, data: NameDaysData, key: string): string[] {
-  const out: string[] = [];
-  const words = displayName(contact.name).split(/[^\p{L}’']+/u);
-  for (const w of words) {
-    if (w.length < 2) continue;
-    if (data.map[w.toUpperCase()] === key) out.push(w);
-  }
-  return out;
-}
-
 // ------------------------------------------------------------
 // Parsing importazione rubrica (.vcf / .txt)
 // ------------------------------------------------------------
@@ -568,10 +558,9 @@ function normalizeBirthday(raw: string): string | undefined {
   return undefined;
 }
 
-// FIX "prefisso": senza "+39" numeri italiani finivano letti come
-// internazionali (375… = Bielorussia!). Ora:
-//  "+…" → invariato | "00…" → "+"+resto | 10 cifre che iniziano per 3 → +39…
-//  inizia per 0 (fisso) → +39… | altrimenti cifre grezze.
+// FIX "prefisso": "+…" invariato | "00…" → "+"+resto |
+// 10 cifre che iniziano per 3 → +39… | 0 iniziale (fisso) → +39… |
+// altrimenti cifre grezze. (Prima "375…" era preso per la Bielorussia!)
 export function normalizePhone(raw: string): string | undefined {
   const cleaned = raw.replace(/[^\d+]/g, "");
   const digits = cleaned.replace(/\D/g, "");

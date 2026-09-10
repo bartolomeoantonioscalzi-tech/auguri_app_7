@@ -13,6 +13,8 @@
 // DEFUNTI: flag MORTO/MORTA dentro il campo Nome; il nome
 // nei messaggi è sempre pulito del flag.
 //
+// D11: NEL MESSAGGIO SOLO IL PRIMO NOME, mai il cognome.
+//
 // BUG FIX "contatto bruciato": stato invio PER CANALE,
 // altri canali sempre attivi, card ripristinabile.
 // ============================================================
@@ -156,7 +158,8 @@ export function peekTemplate(occasion: Occasion): string {
   return pool[rotationValue % pool.length];
 }
 
-/** Messaggio completo per un contatto/occasione/tranche. */
+/** Messaggio completo per un contatto/occasione/tranche.
+ *  D11: nel messaggio SOLO il primo nome, mai il cognome. */
 export function buildMessage(
   contact: Contact,
   settings: Settings,
@@ -169,7 +172,7 @@ export function buildMessage(
       ? DECEASED_ONOMASTICO_TEMPLATE
       : DECEASED_BIRTHDAY_TEMPLATE
     : peekTemplate(occasion);
-  const name = displayName(contact.name);
+  const name = firstNameOf(displayName(contact.name));
   const sig = fullSignature(settings);
   return renderMessage(template, name, sig, deceased ? 0 : tranche);
 }
@@ -461,7 +464,7 @@ export function hasNameDayOn(contact: Contact, data: NameDaysData, key: string):
   return nameDaysOf(contact, data).includes(key);
 }
 
-/** Primo NPP del contatto trovato nella mappa (per mostrare il nome festeggiato). */
+/** NPP del contatto che festeggiano nella data key (per etichette). */
 export function matchedNameDays(contact: Contact, data: NameDaysData, key: string): string[] {
   const out: string[] = [];
   const words = displayName(contact.name).split(/[^\p{L}’']+/u);

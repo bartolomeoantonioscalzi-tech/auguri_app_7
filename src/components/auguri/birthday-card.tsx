@@ -18,6 +18,8 @@ import {
   isDeceased,
   isInsideSendWindow,
   pendingChannels,
+  phoneFor,
+  phonesOf,
   sentChannels,
   useRotationIndex,
 } from "@/lib/auguri";
@@ -34,9 +36,9 @@ interface Props {
 
 const CONFIRM_NOTE: Record<Channel, string> = {
   telegram:
-    "Si aprirà Telegram direttamente sulla chat del numero; se l'account non esiste, Telegram stesso mostrerà l'avviso «utente non esiste». Il testo è copiato negli appunti: incollalo nella chat.",
-  whatsapp: "Si aprirà WhatsApp con il messaggio già scritto.",
-  sms: "Si aprirà l'app Messaggi con il testo già pronto.",
+    "Si aprirà Telegram direttamente sulla chat del numero scelto; se l'account non esiste, Telegram stesso mostrerà l'avviso «utente non esiste». Il testo è copiato negli appunti: incollalo nella chat.",
+  whatsapp: "Si aprirà WhatsApp con il messaggio già scritto, sul numero scelto.",
+  sms: "Si aprirà l'app Messaggi con il testo già pronto, sul numero scelto.",
 };
 
 const OCCASION_BADGE: Record<Occasion, { label: string; className: string }> = {
@@ -58,6 +60,14 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
   const [copied, setCopied] = useState(false);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
 
+  const allPhones = phonesOf(contact);
+  const [selectedPhone, setSelectedPhone] = useState<string>(allPhones[0] ?? "");
+
+  // Se il contatto cambia (es. reimport), riallinea il numero selezionato
+  useEffect(() => {
+    setSelectedPhone(phonesOf(contact)[0] ?? "");
+  }, [contact.id, contact.phone, contact.phones?.join("|")]);
+
   // Reattivo alla rotazione: l'anteprima segue il modello corrente.
   useRotationIndex();
   const [mounted, setMounted] = useState(false);
@@ -65,9 +75,7 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
 
   const deceased = isDeceased(contact.name);
   const name = displayName(contact.name);
-  const previewMessage = mounted
-    ? buildMessage(contact, settings, occasion, tranche)
-    : "";
+  const previewMessage = mounted ? buildMessage(contact, settings, occasion, tranche) : "";
 
   const done = sentChannels(contact);
   const pending = pendingChannels(contact);
@@ -78,11 +86,9 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
     if (!confirming) return;
     const channel = confirming;
     setConfirming(null);
-    // Il messaggio è composto PRIMA di avanzare la rotazione:
-    // l'anteprima vista corrisponde esattamente a ciò che parte.
     const messageNow = buildMessage(contact, settings, occasion, tranche);
     onMarkSent(contact.id, channel);
-    if (!deceased) advanceRotation(); // i modelli di ricordo non ruotano
+    if (!deceased) advanceRotation();
     setLastMessage(messageNow);
     try {
       await navigator.clipboard.writeText(messageNow);
@@ -91,7 +97,7 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
     } catch {
       // appunti non disponibili: prosegui comunque
     }
-    const url = channelUrl(channel, contact.phone, messageNow);
+    const url = channelUrl(channel, phoneFor(contact, selectedPhone), messageNow);
     if (channel === "whatsapp") {
       window.open(url, "_blank");
     } else {
@@ -121,14 +127,41 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
           <h2 className="truncate font-serif text-[22px] font-bold leading-tight text-[#3B2F1E]">
             {name}
           </h2>
-          <p className="text-[15px] text-[#8A7A5E]">{contact.phone}</p>
+          <p className="truncate text-[15px] text-[#8A7A5E]">
+            {allPhones.length > 1 ? `${allPhones.length} numeri · ${selectedPhone}` : contact.phone}
+          </p>
         </div>
         {sent && (
-          <span className="shrink-0 font-serif text-[15px] font-bold text-[#2F5B33]">
-            Inviato
-          </span>
+          <span className="shrink-0 font-serif text-[15px] font-bold text-[#2F5B33]">Inviato</span>
         )}
       </div>
+
+      {/* Selettore numero (solo se più di uno) */}
+      {allPhones.length > 1 && (
+        <div className="mt-3">
+          <p className="text-[12px] font-bold uppercase tracking-wide text-[#8A7A5E]">
+            Numero da usare
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {allPhones.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setSelectedPhone(p)}
+                aria-pressed={selectedPhone === p}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-[14px] font-bold transition-colors",
+                  selectedPhone === p
+                    ? "bg-[#362B1D] text-white"
+                    : "bg-[#D8CBAA] text-[#4A3B28]"
+                )}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Badge */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -178,7 +211,14 @@ export function AuguriCard({ contact, settings, occasion, tranche, onMarkSent, o
       {confirming ? (
         <div className="mt-4">
           <p className="mb-3 text-center font-serif text-[17px] text-[#3E3428]">
-            Confermi invio a <b>{name}</b>?
+            Confermi invio a <b>{name}</b>
+            {allPhones.length > 1 ? (
+              <>
+                {" "}al numero <b>{phoneFor(contact, selectedPhone)}</b>?
+              </>
+            ) : (
+              "?"
+            )}
           </p>
           <p className="mb-3 text-center text-[13px] leading-snug text-[#8A7A5E]">
             {CONFIRM_NOTE[confirming]}

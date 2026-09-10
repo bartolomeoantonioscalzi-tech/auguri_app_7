@@ -24,6 +24,7 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
   const [confirmClear, setConfirmClear] = useState(false);
   const [manualName, setManualName] = useState("");
   const [manualPhone, setManualPhone] = useState("");
+  const [manualPhone2, setManualPhone2] = useState("");
   const [manualBday, setManualBday] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -45,6 +46,7 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
         id: `${now}-${i}-${Math.random().toString(36).slice(2, 8)}`,
         name: p.name,
         phone: p.phone,
+        phones: p.phones && p.phones.length > 1 ? p.phones : undefined,
         birthday: p.birthday,
         sent: {},
       }))
@@ -57,17 +59,27 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
     const name = manualName.trim();
     const phone = manualPhone.trim();
     if (!name || !phone) return;
+    const p1 = phone.startsWith("+") ? phone : `+39${phone.replace(/\D/g, "")}`;
+    const p2raw = manualPhone2.trim();
+    const p2 = p2raw
+      ? p2raw.startsWith("+")
+        ? p2raw
+        : `+39${p2raw.replace(/\D/g, "")}`
+      : "";
+    const phones = p2 && p2 !== p1 ? [p1, p2] : undefined;
     onAdd([
       {
         id: `${Date.now()}-man-${Math.random().toString(36).slice(2, 8)}`,
         name,
-        phone: phone.startsWith("+") ? phone : `+${phone.replace(/\D/g, "")}`,
+        phone: p1,
+        phones,
         birthday: manualBday.trim() || undefined,
         sent: {},
       },
     ]);
     setManualName("");
     setManualPhone("");
+    setManualPhone2("");
     setManualBday("");
   };
 
@@ -88,7 +100,9 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
             setRaw(e.target.value);
             runParse(e.target.value);
           }}
-          placeholder={"Esempi accettati:\nMario Rossi; +393331234567\nLuca Bianchi, 3391234568, 12/06\noppure un vCard esportato dai contatti"}
+          placeholder={
+            "Esempi accettati:\nMario Rossi; +393331234567\nLuca Bianchi, 3391234568, 3491234569, 12/06\noppure un vCard esportato dai contatti"
+          }
           rows={6}
           className="w-full resize-y rounded-lg border border-[#DCD2BB] bg-white/70 p-3 font-mono text-[13px] leading-relaxed text-[#3E3428] outline-none placeholder:text-[#B3A787] focus:border-[#C7B699]"
         />
@@ -146,7 +160,11 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
                     {p.name || <i className="text-[#A3825F]">senza nome</i>}
                   </span>
                   <span className="shrink-0 text-[#8A7A5E]">
-                    {p.error ? p.error : `${p.phone}${p.birthday ? ` · ${p.birthday}` : ""}`}
+                    {p.error
+                      ? p.error
+                      : p.phones && p.phones.length > 1
+                        ? `${p.phones.length} numeri${p.birthday ? ` · ${p.birthday}` : ""}`
+                        : `${p.phone}${p.birthday ? ` · ${p.birthday}` : ""}`}
                   </span>
                 </div>
               ))}
@@ -177,7 +195,14 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
             value={manualPhone}
             onChange={(e) => setManualPhone(e.target.value)}
             inputMode="tel"
-            placeholder="+39 333 1234567"
+            placeholder="Cellulare principale (+39 333 1234567)"
+            className="h-11 rounded-lg border border-[#DCD2BB] bg-white/70 px-3 text-[15px] text-[#3E3428] outline-none placeholder:text-[#B3A787] focus:border-[#C7B699]"
+          />
+          <input
+            value={manualPhone2}
+            onChange={(e) => setManualPhone2(e.target.value)}
+            inputMode="tel"
+            placeholder="Secondo numero (facoltativo)"
             className="h-11 rounded-lg border border-[#DCD2BB] bg-white/70 px-3 text-[15px] text-[#3E3428] outline-none placeholder:text-[#B3A787] focus:border-[#C7B699]"
           />
           <input
@@ -261,6 +286,7 @@ export function ImportaTab({ contacts, onAdd, onRemove, onRemoveAll }: Props) {
                   </p>
                   <p className="truncate text-[13px] text-[#8A7A5E]">
                     {c.phone}
+                    {c.phones && c.phones.length > 1 ? ` · +${c.phones.length - 1} altro/i` : ""}
                     {c.birthday ? ` · comp. ${c.birthday}` : ""}
                     {!isBirthdayToday(c) ? " · non oggi" : ""}
                   </p>

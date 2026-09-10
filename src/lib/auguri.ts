@@ -15,6 +15,10 @@
 //
 // D11: NEL MESSAGGIO SOLO IL PRIMO NOME, mai il cognome.
 //
+// MULTI-TELEFONO: un contatto può avere più numeri (phones[]);
+// il primo è quello principale. I dati salvati dalle versioni
+// precedenti (singolo phone) vengono convertiti al volo.
+//
 // BUG FIX "contatto bruciato": stato invio PER CANALE,
 // altri canali sempre attivi, card ripristinabile.
 // ============================================================
@@ -33,7 +37,8 @@ export interface SendRecord {
 export interface Contact {
   id: string;
   name: string;
-  phone: string; // es. "+393401485094"
+  phone: string; // PRINCIPALE: primo numero (compatibilità con le versioni precedenti)
+  phones?: string[]; // TUTTI i numeri (se assente o vuoto: solo phone)
   birthday?: string; // "gg/mm" (opzionale)
   sent?: Partial<Record<Channel, SendRecord>>;
 }
@@ -43,6 +48,29 @@ export interface Settings {
   qualification: string; // facoltativa, DOPO la firma nel messaggio
   /** @deprecated testo chiuso: mantenuto solo per compatibilità dei dati salvati */
   template: string;
+}
+
+// ------------------------------------------------------------
+// Normalizzazione multi-telefono
+// ------------------------------------------------------------
+
+/** Tutti i numeri del contatto, ripuliti e senza duplicati (il primo è il principale). */
+export function phonesOf(contact: Contact): string[] {
+  const out: string[] = [];
+  const push = (p?: string) => {
+    const v = (p ?? "").trim();
+    if (v && !out.includes(v)) out.push(v);
+  };
+  push(contact.phone);
+  for (const p of contact.phones ?? []) push(p);
+  return out.length ? out : [""];
+}
+
+/** Il numero da usare: quello scelto nella card se valido, altrimenti il principale. */
+export function phoneFor(contact: Contact, selected?: string | null): string {
+  const list = phonesOf(contact);
+  if (selected && list.includes(selected)) return selected;
+  return list[0] ?? "";
 }
 
 // ------------------------------------------------------------
@@ -74,7 +102,7 @@ export const DECEASED_ONOMASTICO_TEMPLATE =
 // Compatibilità con dati salvati dalle versioni precedenti
 export const DEFAULT_TEMPLATE = BIRTHDAY_TEMPLATES[0];
 export const PRESET_TEMPLATES: { label: string; value: string }[] = BIRTHDAY_TEMPLATES.map(
-  (value, i) => ({ label: `Modello ${i + 1}`, value })
+  (value, i) => ({ label: `Modello ${i+1}`, value })
 );
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -249,7 +277,7 @@ export function displayName(name: string): string {
 }
 
 // ------------------------------------------------------------
-// URL dei canali
+// URL dei canali (accetta il numero scelto nella card)
 // ------------------------------------------------------------
 
 function phoneDigits(phone: string): string {
@@ -481,7 +509,8 @@ export function matchedNameDays(contact: Contact, data: NameDaysData, key: strin
 
 export interface ParsedContact {
   name: string;
-  phone: string;
+  phone: string; // principale (primo cellulare, o primo numero)
+  phones?: string[]; // tutti i numeri trovati
   birthday?: string;
   error?: string;
 }
@@ -625,7 +654,7 @@ export function parseImportText(raw: string): ParsedContact[] {
       const end = block.search(/END:VCARD/i);
       const body = end >= 0 ? block.slice(0, end) : block;
       let name = "";
-      let firstPhone = "";
+      const allPhones: string[] = []; // in ordine di lettura
       let cellPhone = "";
       let birthday: string | undefined;
       for (const line of unfoldLines(body)) {
@@ -652,8 +681,9 @@ export function parseImportText(raw: string): ParsedContact[] {
           case "TEL": {
             const v = value.replace(/^tel:/i, "").trim();
             if (!v) break;
-            if (!firstPhone) firstPhone = v;
-            if (!cellPhone && prop.params.includes("CELL")) cellPhone = v;
+            const norm = normalizePhone(v) ?? v;
+            allPhones.push(norm);
+            if (!cellPhone && prop.params.includes("CELL")) cellPhone = norm;
             break;
           }
           case "BDAY":
@@ -661,16 +691,19 @@ export function parseImportText(raw: string): ParsedContact[] {
             break;
         }
       }
-      const chosen = cellPhone || firstPhone;
-      const normPhone = chosen ? normalizePhone(chosen) : undefined;
-      if (name && normPhone) results.push({ name: name.trim(), phone: normPhone, birthday });
-      else if (name || chosen)
+      // Il principale: il primo cellulare se c'è, altrimenti il primo numero.
+      const principal = cellPhone || allPhones[0] || "";
+      if (name && principal) {
+        results.push({ name: name.trim(), phone: principal, phones: allPhones, birthday });
+      } else if (name || allPhones.length) {
         results.push({
           name: name || "Sconosciuto",
-          phone: chosen || "",
+          phone: principal,
+          phones: allPhones,
           birthday,
           error: "Dati incompleti (serve nome e telefono)",
         });
+      }
     }
     if (results.length) return results;
   }
@@ -679,7 +712,7 @@ export function parseImportText(raw: string): ParsedContact[] {
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (/^(nome|cognome|name)\b/i.test(trimmed) && !/\d/.test(trimmed)) continue;
+    if (/^(nome|cognome|name)\b/i.test(trimmed) && !/\d/.test(trimmed)) continue; // intestazione
 
     const dateToken = trimmed.match(DATE_TOKEN_RE)?.[0];
     const dateless = dateToken ? trimmed.replace(dateToken, " ") : trimmed;
@@ -697,6 +730,22 @@ export function parseImportText(raw: string): ParsedContact[] {
       continue;
     }
 
+    // Numeri aggiuntivi sulla stessa riga: cerco altri candidati dopo il primo.
+    const extra: string[] = [];
+    const rest = sourceLine.slice(hit.index + hit.length);
+    const re = new RegExp(PHONE_CANDIDATE_RE.source, "g");
+    let m2: RegExpExecArray | null;
+    while ((m2 = re.exec(rest)) !== null) {
+      const beforeCh = rest[m2.index - 1];
+      const afterCh = rest[m2.index + m2[0].length];
+      if (beforeCh && /\d/.test(beforeCh)) continue;
+      if (afterCh && /\d/.test(afterCh)) continue;
+      const digits = m2[0].replace(/\D/g, "");
+      if (digits.length < 8 || digits.length > 15) continue;
+      const norm = normalizePhone(m2[0]);
+      if (norm && norm !== hit.phone && !extra.includes(norm)) extra.push(norm);
+    }
+
     const beforeText = sourceLine.slice(0, hit.index);
     const afterText = sourceLine.slice(hit.index + hit.length);
     const name =
@@ -707,7 +756,13 @@ export function parseImportText(raw: string): ParsedContact[] {
       results.push({ name: "", phone: hit.phone, birthday, error: "Nome non trovato" });
       continue;
     }
-    results.push({ name: name.replace(/\s+/g, " ").trim(), phone: hit.phone, birthday });
+    const phones = [hit.phone, ...extra];
+    results.push({
+      name: name.replace(/\s+/g, " ").trim(),
+      phone: hit.phone,
+      phones,
+      birthday,
+    });
   }
   return results;
 }
